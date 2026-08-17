@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soft Chess</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Manrope:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --bg-deep: #c8cedb;
+    --bg-mid: #dde1ea;
+    --bg-light: #eef0f5;
+    --paper: #f5f4ef;
+    --ink: #2a2e3a;
+    --ink-soft: #5a6273;
+    --hair: #b4bccd;
+    --hair-deep: #8a92a4;
+    --accent: #6f7a92;
+    --accent-deep: #4a5570;
+    --gold: #c9a875;
+    --rose: #c9a0a8;
+    --leaf: #a8b89c;
+  }
+
+  * { -webkit-font-smoothing: antialiased; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg-deep);
+    color: var(--ink);
+    overflow-x: hidden;
+    font-weight: 300;
+  }
+
+  .serif { font-family: 'Cormorant Garamond', serif; }
+
+  .bg-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(255, 245, 230, 0.5) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 30%, rgba(180, 188, 205, 0.6) 0%, transparent 55%),
+      radial-gradient(ellipse at 50% 80%, rgba(168, 184, 156, 0.35) 0%, transparent 60%),
+      linear-gradient(180deg, #d4d9e3 0%, #c8cedb 35%, #b8becd 70%, #a8aebd 100%);
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.6 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 250, 230, 0.9) 0%, rgba(255, 250, 230, 0) 70%);
+    pointer-events: none;
+    animation: floatUp linear infinite;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(110vh) translateX(0) scale(0.5); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-10vh) translateX(40px) scale(1.2); opacity: 0; }
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 
+      0 8px 32px rgba(60, 70, 90, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .glass-dark {
+    background: rgba(70, 80, 100, 0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  
+  .btn-primary {
+    position: relative;
+    background: linear-gradient(135deg, #4a5570 0%, #6f7a92 100%);
+    color: #f5f4ef;
+    padding: 16px 36px;
+    border-radius: 999px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 10px 30px rgba(74, 85, 112, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #6f7a92 0%, #8a92a4 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(74, 85, 112, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-primary span { position: relative; z-index: 1; }
+
+  .btn-ghost {
+    position: relative;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+    padding: 16px 36px;
+    border-radius: 999px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(10px);
+  }
+
+  .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.75);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(60, 70, 90, 0.15);
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1), transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 
+      0 20px 50px rgba(60, 70, 90, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.3);
+  }
+
+  .chess-square {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    transition: background 0.3s;
+  }
+
+  .square-light { background: #ebe6d9; }
+  .square-dark { background: #8a8a9a; }
+
+  .chess-piece {
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+    transition: transform 0.4s;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .chess-piece.white { color: #f5f4ef; text-shadow: 0 0 2px #4a5570, 0 0 3px #4a5570; }
+  .chess-piece.black { color: #2a2e3a; }
+
+  .chess-square:hover .chess-piece {
+    transform: scale(1.15);
+  }
+
+  .avatar-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 
+      0 30px 80px rgba(60, 70, 90, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.5),
+      inset 0 0 0 8px rgba(255, 255, 255, 0.1);
+  }
+
+  .avatar-frame::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, 
+      rgba(255, 250, 230, 0.6),
+      rgba(180, 188, 205, 0.3),
+      rgba(168, 184, 156, 0.4),
+      rgba(201, 168, 117, 0.3),
+      rgba(255, 250, 230, 0.6));
+    z-index: -1;
+    animation: rotate 20s linear infinite;
+  }
+
+  @keyframes rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  .title-gradient {
+    background: linear-gradient(135deg, #2a2e3a 0%, #4a5570 50%, #6f7a92 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .feature-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.8s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 60px rgba(60, 70, 90, 0.18);
+  }
+
+  .feature-card:hover::before { left: 100%; }
+
+  .scroll-indicator {
+    width: 2px;
+    height: 60px;
+    background: linear-gradient(180deg, transparent, var(--accent-deep), transparent);
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scroll-indicator::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background: var(--ink);
+    animation: scrollDown 2.5s ease-in-out infinite;
+  }
+
+  @keyframes scrollDown {
+    0% { top: -20px; }
+    100% { top: 100%; }
+  }
+
+  .nav-link {
+    position: relative;
+    color: var(--ink-soft);
+    transition: color 0.3s;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 1px;
+    background: var(--accent-deep);
+    transition: width 0.3s ease;
+  }
+
+  .nav-link:hover { color: var(--ink); }
+  .nav-link:hover::after { width: 100%; }
+
+  .floating-piece {
+    position: absolute;
+    font-size: 6rem;
+    opacity: 0.08;
+    pointer-events: none;
+    animation: floatSlow 12s ease-in-out infinite;
+  }
+
+  @keyframes floatSlow {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(20px, -30px) rotate(5deg); }
+    66% { transform: translate(-15px, 20px) rotate(-3deg); }
+  }
+
+  .key {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-bottom: 2px solid rgba(74, 85, 112, 0.3);
+    border-radius: 6px;
+    font-family: 'Manrope', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .code-block {
+    background: rgba(42, 46, 58, 0.85);
+    color: #d8dbe5;
+    border-radius: 14px;
+    padding: 24px 28px;
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow-x: auto;
+  }
+
+  .code-block .prompt { color: #c9a875; }
+  .code-block .comment { color: #8a92a4; }
+  .code-block .cmd { color: #e5dcc8; }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a8b89c;
+    box-shadow: 0 0 12px rgba(168, 184, 156, 0.8);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: var(--accent-deep);
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-deep), transparent);
+  }
+
+  .move-arrow {
+    position: relative;
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-deep));
+  }
+
+  .move-arrow::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -4px;
+    border: 5px solid transparent;
+    border-left-color: var(--accent-deep);
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 245, 220, 0.4) 0%, transparent 60%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .chess-square { font-size: 1rem; }
+    .floating-piece { display: none; }
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+  ::-webkit-scrollbar-thumb { 
+    background: rgba(74, 85, 112, 0.4);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(74, 85, 112, 0.6); }
+
+  .icon-orb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+    box-shadow: 0 8px 20px rgba(74, 85, 112, 0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .feature-card:hover .icon-orb {
+    transform: scale(1.1) rotate(8deg);
+    box-shadow: 0 12px 30px rgba(74, 85, 112, 0.25), inset 0 1px 0 rgba(255,255,255,0.9);
+  }
+
+  .section-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body class="relative">
+
+<div class="bg-atmosphere"></div>
+<div class="grain"></div>
+
+<div id="particles" class="fixed inset-0 z-0 pointer-events-none"></div>
+
+<div class="floating-piece serif" style="top: 15%; left: 5%; animation-delay: 0s;">♞</div>
+<div class="floating-piece serif" style="top: 60%; right: 8%; animation-delay: -4s;">♛</div>
+<div class="floating-piece serif" style="top: 85%; left: 12%; animation-delay: -8s;">♜</div>
+<div class="floating-piece serif" style="top: 35%; right: 15%; animation-delay: -2s;">♝</div>
+
+<nav class="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-5">
+  <div class="glass rounded-full max-w-6xl mx-auto px-6 md:px-8 py-3 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #4a5570, #6f7a92);">
+        <span class="serif text-xl text-white">♞</span>
+      </div>
+      <span class="serif text-xl font-medium tracking-wide">Soft Chess</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="#features" class="nav-link">Возможности</a>
+      <a href="#how" class="nav-link">Как пользоваться</a>
+      <a href="#analysis" class="nav-link">Анализ</a>
+      <a href="#install" class="nav-link">Установка</a>
+    </div>
+    <a href="https://github.com/6uxoi-Angel/Chess" target="_blank" class="hidden md:flex items-center gap-2 text-sm text-white px-5 py-2 rounded-full" style="background: rgba(74, 85, 112, 0.85);">
+      <i class="fab fa-github"></i>
+      <span>GitHub</span>
+    </a>
+  </div>
+</nav>
+
+<header class="relative min-h-screen flex items-center px-6 md:px-12 pt-32 pb-20 overflow-hidden">
+  <div class="hero-glow" style="top: -200px; right: -200px;"></div>
+  <div class="hero-glow" style="bottom: -300px; left: -200px;"></div>
+  
+  <div class="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center relative z-10">
+    <div class="reveal">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="status-dot"></div>
+        <span class="text-sm tracking-widest uppercase" style="color: var(--accent-deep);">Stockfish готов</span>
+      </div>
+      
+      <h1 class="serif text-6xl md:text-7xl lg:text-8xl leading-[0.95] mb-8 title-gradient font-light">
+        Шахматный<br>
+        <span class="italic font-medium">анализатор</span>
+      </h1>
+      
+      <p class="text-lg md:text-xl mb-10 leading-relaxed max-w-xl" style="color: var(--ink-soft);">
+        Desktop-приложение на Python и Pygame для игры в шахматы, подготовки позиций и анализа с помощью Stockfish. Спокойный интерфейс для вдумчивой игры.
+      </p>
+      
+      <div class="flex flex-wrap gap-4 mb-12">
+        <a href="https://github.com/6uxoi-Angel/Chess/releases/latest" target="_blank" class="btn-primary inline-flex items-center gap-3">
+          <span class="flex items-center gap-3">
+            <i class="fas fa-download"></i>
+            Скачать
+          </span>
+        </a>
+        <a href="https://github.com/6uxoi-Angel/Chess" target="_blank" class="btn-ghost inline-flex items-center gap-3">
+          <i class="fab fa-github"></i>
+          Исходный код
+        </a>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6 max-w-md">
+        <div>
+          <div class="serif text-3xl font-medium" style="color: var(--accent-deep);">Python</div>
+          <div class="text-xs uppercase tracking-widest mt-1" style="color: var(--ink-soft);">3.13+</div>
+        </div>
+        <div>
+          <div class="serif text-3xl font-medium" style="color: var(--accent-deep);">Pygame</div>
+          <div class="text-xs uppercase tracking-widest mt-1" style="color: var(--ink-soft);">движок</div>
+        </div>
+        <div>
+          <div class="serif text-3xl font-medium" style="color: var(--accent-deep);">AVX2</div>
+          <div class="text-xs uppercase tracking-widest mt-1" style="color: var(--ink-soft);">Stockfish</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative reveal" style="transition-delay: 0.2s;">
+      <div class="relative max-w-md mx-auto">
+        <div class="avatar-frame">
+          <img src="./ava.jpg" alt="Аватар приложения" class="w-full h-full object-cover">
+        </div>
+        
+        <div class="absolute -bottom-16 -left-12 w-48 md:w-64 glass rounded-2xl p-3 transform -rotate-6 hidden md:block">
+          <div class="chess-board">
+            <div class="chess-square square-light"><span class="chess-piece black">♜</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♞</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♝</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♛</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♚</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♝</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♞</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♜</span></div>
+            
+            <div class="chess-square square-dark"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece black">♟</span></div>
+            <div class="chess-square square-light"><span class="chess-piece black">♟</span></div>
+            
+            <div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div>
+            <div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div>
+            <div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div>
+            <div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div><div class="chess-square square-dark"></div><div class="chess-square square-light"></div>
+            
+            <div class="chess-square square-light"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♙</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♙</span></div>
+            
+            <div class="chess-square square-dark"><span class="chess-piece white">♖</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♘</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♗</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♕</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♔</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♗</span></div>
+            <div class="chess-square square-dark"><span class="chess-piece white">♘</span></div>
+            <div class="chess-square square-light"><span class="chess-piece white">♖</span></div>
+          </div>
+        </div>
+
+        <div class="absolute -top-4 -right-4 md:-right-8 glass-dark rounded-2xl px-5 py-3 transform rotate-3">
+          <div class="text-xs uppercase tracking-widest" style="color: rgba(255,255,255,0.7);">Пример оценки</div>
+          <div class="serif text-3xl font-medium text-white">+0.32</div>
+          <div class="text-[10px] mt-1" style="color: rgba(255,255,255,0.5);">Stockfish</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+    <div class="scroll-indicator"></div>
+  </div>
+</header>
+
+<section id="features" class="relative px-6 md:px-12 py-32">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="section-label">Возможности</span>
+      <h2 class="serif text-5xl md:text-6xl font-light title-gradient mb-6">
+        Спокойствие каждой <span class="italic">клетки</span>
+      </h2>
+      <p class="max-w-2xl mx-auto text-lg" style="color: var(--ink-soft);">
+        Продуманные инструменты для игры, подготовки и анализа — без лишнего шума.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="feature-card glass rounded-3xl p-8 reveal">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-users text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Игра двух игроков</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Сразитесь за одной доской с другом. Ходы чередуются автоматически, подсветка доступных клеток помогает ориентироваться.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal" style="transition-delay: 0.1s;">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-robot text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Игра против Stockfish</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Выберите сторону — белые или чёрные. Движок автоматически отвечает за противника, рассчитывая лучшие ходы.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal" style="transition-delay: 0.2s;">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-lightbulb text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Подсветка ходов</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Доступные клетки отмечены точками, взятия — кольцом. Последний ход, шах и варианты движка также подсвечиваются.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-chart-line text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Анализ позиции</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Оценка в пешках и три главных продолжения Stockfish. Стрелка первого хода лучшего варианта прямо на доске.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal" style="transition-delay: 0.1s;">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-pen-ruler text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Редактор позиции</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Добавляйте, удаляйте и перемещайте фигуры. Укажите сторону хода, проверьте корректность позиции перед игрой.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal" style="transition-delay: 0.2s;">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-exchange-alt text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Импорт и экспорт FEN</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Загрузите позицию из FEN или скопируйте текущую в буфер обмена. Поддержка файлов для дальнейшей работы.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-history text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">История и отмена</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Полная история ходов партии. Отмена последнего действия, превращение пешки и корректное отображение результата.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal" style="transition-delay: 0.1s;">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-cogs text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Отдельный поток движка</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Stockfish запускается в отдельном рабочем потоке, сохраняя отзывчивость интерфейса во время расчётов.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-8 reveal" style="transition-delay: 0.2s;">
+        <div class="icon-orb mb-6">
+          <i class="fas fa-shield-alt text-xl" style="color: var(--accent-deep);"></i>
+        </div>
+        <h3 class="serif text-2xl font-medium mb-3">Защита от устаревших данных</h3>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Если позиция изменилась во время анализа, результат для старой позиции игнорируется. Только актуальные данные.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="relative px-6 md:px-12 py-32">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="section-label">Как пользоваться</span>
+      <h2 class="serif text-5xl md:text-6xl font-light title-gradient mb-6">
+        Просто и <span class="italic">поэтапно</span>
+      </h2>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12">
+      <div class="reveal">
+        <div class="glass rounded-3xl p-10 h-full">
+          <div class="flex items-center gap-4 mb-8">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #4a5570, #6f7a92);">
+              <i class="fas fa-chess-king text-white"></i>
+            </div>
+            <h3 class="serif text-3xl font-medium">Игра</h3>
+          </div>
+
+          <ol class="space-y-5">
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">01</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Нажмите на фигуру, затем на клетку назначения. Доступные клетки отмечаются точками или кольцом для взятия.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">02</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Кнопка <em class="font-medium" style="color: var(--ink);">Игра: два игрока</em> по очереди включает режимы <em>вы белыми</em> и <em>вы чёрными</em>. В этих режимах Stockfish отвечает за противоположную сторону.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">03</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Нажмите <em class="font-medium" style="color: var(--ink);">Анализ позиции</em>, чтобы получить оценку и три лучших варианта продолжения.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">04</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Используйте <em class="font-medium" style="color: var(--ink);">Отменить ход</em>, чтобы вернуться назад, или <em class="font-medium" style="color: var(--ink);">Новая партия</em>, чтобы начать заново.
+              </p>
+            </li>
+          </ol>
+
+          <div class="mt-8 pt-8 border-t border-white/30">
+            <h4 class="text-xs uppercase tracking-widest mb-4" style="color: var(--accent-deep);">Горячие клавиши</h4>
+            <div class="flex flex-wrap gap-3">
+              <div class="flex items-center gap-2">
+                <span class="key">Ctrl</span>
+                <span class="text-xs">+</span>
+                <span class="key">Z</span>
+                <span class="text-xs ml-1" style="color: var(--ink-soft);">отменить</span>
+              </div>
+              <div class="flex items-center gap-2 ml-2">
+                <span class="key">F</span>
+                <span class="text-xs ml-1" style="color: var(--ink-soft);">перевернуть</span>
+              </div>
+              <div class="flex items-center gap-2 ml-2">
+                <span class="key">Esc</span>
+                <span class="text-xs ml-1" style="color: var(--ink-soft);">закрыть</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="transition-delay: 0.2s;">
+        <div class="glass rounded-3xl p-10 h-full">
+          <div class="flex items-center gap-4 mb-8">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #8a92a4, #b4bccd);">
+              <i class="fas fa-pen-ruler text-white"></i>
+            </div>
+            <h3 class="serif text-3xl font-medium">Редактор позиции</h3>
+          </div>
+
+          <ol class="space-y-5">
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">01</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Нажмите кнопку <em class="font-medium" style="color: var(--ink);">Игра</em>, чтобы переключиться в режим <em>Редактор</em>.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">02</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Выберите фигуру на панели и нажмите клетку доски, чтобы разместить её. <em>Ластик</em> или правая кнопка мыши удаляют фигуру.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">03</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Без выбранной фигуры фигуры можно перетаскивать мышью по доске.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">04</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                Используйте <em class="font-medium" style="color: var(--ink);">Ход белых</em> / <em class="font-medium" style="color: var(--ink);">Ход чёрных</em>, чтобы указать сторону хода.
+              </p>
+            </li>
+            <li class="flex gap-4">
+              <span class="serif text-2xl font-medium" style="color: var(--accent-deep); min-width: 32px;">05</span>
+              <p class="text-sm leading-relaxed pt-2" style="color: var(--ink-soft);">
+                <em class="font-medium" style="color: var(--ink);">Импорт FEN</em> открывает ввод позиции — нажмите Enter, чтобы применить. <em class="font-medium" style="color: var(--ink);">Экспорт FEN</em> копирует позицию в буфер и сохраняет в файл.
+              </p>
+            </li>
+          </ol>
+
+          <div class="mt-8 pt-8 border-t border-white/30">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-info-circle mt-1" style="color: var(--accent-deep);"></i>
+              <p class="text-xs leading-relaxed" style="color: var(--ink-soft);">
+                Перед переходом в режим игры редактор проверяет корректность позиции. Для партии нужны оба короля и соблюдение шахматных правил.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="analysis" class="relative px-6 md:px-12 py-32">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="section-label">Как работает анализ</span>
+      <h2 class="serif text-5xl md:text-6xl font-light title-gradient mb-6">
+        Stockfish в <span class="italic">отдельном потоке</span>
+      </h2>
+      <p class="max-w-2xl mx-auto text-lg" style="color: var(--ink-soft);">
+        Приложение запускает движок в отдельном рабочем потоке, сохраняя отзывчивость интерфейса во время расчётов.
+      </p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="feature-card glass rounded-3xl p-10 reveal text-center">
+        <div class="serif text-6xl font-light mb-4 title-gradient">+0.32</div>
+        <div class="text-xs uppercase tracking-widest mb-4" style="color: var(--accent-deep);">Оценка позиции</div>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Оценка с точки зрения белых. Положительное значение — преимущество белых, отрицательное — чёрных. Мат отображается в формате <span class="key">#N</span>.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-10 reveal" style="transition-delay: 0.15s;">
+        <div class="text-xs uppercase tracking-widest mb-4" style="color: var(--accent-deep);">Главные варианты</div>
+        <div class="space-y-3 mb-6">
+          <div class="flex items-center gap-3">
+            <span class="serif text-xl font-medium" style="color: var(--accent-deep);">1.</span>
+            <span class="text-sm font-mono" style="color: var(--ink);">e4 e5 2. Nf3 Nc6</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="serif text-xl font-medium" style="color: var(--accent-deep);">2.</span>
+            <span class="text-sm font-mono" style="color: var(--ink);">d4 d5 3. exd5</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="serif text-xl font-medium" style="color: var(--accent-deep);">3.</span>
+            <span class="text-sm font-mono" style="color: var(--ink);">Bc4 Bc5 3. c3</span>
+          </div>
+        </div>
+        <p class="text-xs leading-relaxed" style="color: var(--ink-soft);">
+          До трёх главных вариантов (principal variations) от движка.
+        </p>
+      </div>
+
+      <div class="feature-card glass rounded-3xl p-10 reveal text-center" style="transition-delay: 0.3s;">
+        <div class="flex items-center justify-center mb-4">
+          <div class="move-arrow"></div>
+        </div>
+        <div class="text-xs uppercase tracking-widest mb-4" style="color: var(--accent-deep);">Стрелка на доске</div>
+        <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">
+          Первый ход лучшего варианта отображается стрелкой прямо на доске. Визуально понятно, какой ход предлагает движок.
+        </p>
+      </div>
+    </div>
+
+    <div class="reveal mt-12">
+      <div class="glass-dark rounded-2xl p-8 flex items-start gap-5">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(168, 184, 156, 0.3);">
+          <i class="fas fa-shield-alt text-white"></i>
+        </div>
+        <div>
+          <h4 class="serif text-xl font-medium text-white mb-2">Защита от устаревших результатов</h4>
+          <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.8);">
+            Если положение изменилось во время анализа, результат для старой позиции игнорируется. Применяются только актуальные расчёты для текущей позиции.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="relative px-6 md:px-12 py-32">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-20 reveal">
+      <span class="section-label">Установка</span>
+      <h2 class="serif text-5xl md:text-6xl font-light title-gradient mb-6">
+        Запуск за <span class="italic">минуту</span>
+      </h2>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-8">
+      <div class="reveal">
+        <div class="glass rounded-3xl p-10 h-full">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs uppercase tracking-widest font-medium" style="color: var(--accent-deep);">Быстрый запуск</span>
+          </div>
+          <h3 class="serif text-3xl font-medium mb-8">Для Windows</h3>
+
+          <div class="space-y-6">
+            <div class="flex gap-5">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #4a5570, #6f7a92);">
+                <span class="serif text-white font-medium">1</span>
+              </div>
+              <div class="pt-1">
+                <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">Скачайте или клонируйте репозиторий.</p>
+              </div>
+            </div>
+            <div class="flex gap-5">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #4a5570, #6f7a92);">
+                <span class="serif text-white font-medium">2</span>
+              </div>
+              <div class="pt-1">
+                <p class="text-sm leading-relaxed" style="color: var(--ink-soft);">Откройте папку проекта.</p>
+              </div>
+            </div>
+            <div class="flex gap-5">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #4a5570, #6f7a92);">
+                <span class="serif text-white font-medium">3</span>
+              </div>
+              <div class="pt-1">
+                <p class="text-sm leading-relaxed mb-3" style="color: var(--ink-soft);">Запустите <span class="key">run.bat</span></p>
+                <p class="text-xs leading-relaxed" style="color: var(--ink-soft);">
+                  Скрипт проверит зависимости и при необходимости установит версии из <span class="font-mono">requirements.txt</span>, затем откроет приложение.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-10">
+            <a href="https://github.com/6uxoi-Angel/Chess/releases/latest" target="_blank" class="btn-primary inline-flex items-center gap-3">
+              <span class="flex items-center gap-3">
+                <i class="fas fa-download"></i>
+                Скачать приложение
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="transition-delay: 0.2s;">
+        <div class="glass rounded-3xl p-10 h-full">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs uppercase tracking-widest font-medium" style="color: var(--accent-deep);">Ручная установка</span>
+          </div>
+          <h3 class="serif text-3xl font-medium mb-8">В PowerShell</h3>
+
+          <div class="code-block mb-6">
+            <div><span class="prompt">PS C:\Chess&gt;</span> <span class="cmd">py -3.13 -m pip install -r requirements.txt</span></div>
+            <div class="mt-3"><span class="prompt">PS C:\Chess&gt;</span> <span class="cmd">py -3.13 app.py</span></div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-circle text-xs mt-2" style="color: var(--accent-deep);"></i>
+              <p class="text-sm" style="color: var(--ink-soft);">Windows 10/11</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-circle text-xs mt-2" style="color: var(--accent-deep);"></i>
+              <p class="text-sm" style="color: var(--ink-soft);">Python 3.13 или новее с командой <span class="font-mono">py</span></p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-circle text-xs mt-2" style="color: var(--accent-deep);"></i>
+              <p class="text-sm" style="color: var(--ink-soft);">Процессор с поддержкой AVX2</p>
+            </div>
+          </div>
+
+          <div class="mt-8 pt-8 border-t border-white/30">
+            <p class="text-xs leading-relaxed" style="color: var(--ink-soft);">
+              Движок уже находится в папке <span class="font-mono">stockfish</span>. При необходимости укажите другой путь через переменную окружения <span class="font-mono">STOCKFISH_PATH</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal mt-8">
+      <div class="glass rounded-3xl p-8 md:p-10">
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div class="flex items-center gap-4 flex-shrink-0">
+            <div class="status-dot" style="width: 14px; height: 14px;"></div>
+            <h4 class="serif text-2xl font-medium">Проверка установки</h4>
+          </div>
+          <p class="text-sm leading-relaxed flex-1" style="color: var(--ink-soft);">
+            После запуска в верхней части панели должна появиться зелёная надпись <span class="font-medium" style="color: var(--leaf);">Stockfish готов</span>. Если вместо неё отображается ошибка, проверьте, что <span class="font-mono text-xs">stockfish/stockfish-windows-x86-64-avx2.exe</span> существует и может быть запущен.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="relative px-6 md:px-12 py-32">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <span class="section-label">Структура проекта</span>
+      <h2 class="serif text-5xl md:text-6xl font-light title-gradient">
+        Прозрачная <span class="italic">архитектура</span>
+      </h2>
+    </div>
+
+    <div class="reveal">
+      <div class="code-block" style="background: rgba(42, 46, 58, 0.9);">
+        <div><span style="color: #8a92a4;">.</span></div>
+        <div>├── <span style="color: #c9a875;">app.py</span></div>
+        <div>├── <span style="color: #c9a875;">ava.jpg</span></div>
+        <div>├── <span style="color: #c9a875;">requirements.txt</span></div>
+        <div>├── <span style="color: #c9a875;">run.bat</span></div>
+        <div>└── <span style="color: #c9a875;">stockfish/</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="relative px-6 md:px-12 py-20">
+  <div class="max-w-4xl mx-auto reveal">
+    <div class="glass rounded-3xl p-10 text-center">
+      <i class="fas fa-balance-scale text-3xl mb-4" style="color: var(--accent-deep);"></i>
+      <h3 class="serif text-2xl font-medium mb-3">Лицензии</h3>
+      <p class="text-sm leading-relaxed max-w-2xl mx-auto" style="color: var(--ink-soft);">
+        Код движка Stockfish распространяется на условиях <span class="font-medium" style="color: var(--ink);">GPL v3</span>. Лицензионный текст находится в <span class="font-mono text-xs">stockfish/Copying.txt</span>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="relative px-6 md:px-12 py-32">
+  <div class="max-w-4xl mx-auto text-center reveal">
+    <div class="divider mb-10">
+      <span class="serif text-2xl italic">♞</span>
+    </div>
+    
+    <h2 class="serif text-5xl md:text-7xl font-light title-gradient mb-8">
+      Готовы <span class="italic">начать?</span>
+    </h2>
+    
+    <p class="text-lg mb-12 max-w-xl mx-auto" style="color: var(--ink-soft);">
+      Скачайте приложение, запустите партию или откройте редактор. Спокойный анализ ждёт.
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="https://github.com/6uxoi-Angel/Chess/releases/latest" target="_blank" class="btn-primary inline-flex items-center gap-3">
+        <span class="flex items-center gap-3">
+          <i class="fas fa-download"></i>
+          Скачать приложение
+        </span>
+      </a>
+      <a href="https://github.com/6uxoi-Angel/Chess" target="_blank" class="btn-ghost inline-flex items-center gap-3">
+        <i class="fab fa-github"></i>
+        Исходный код
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="relative px-6 md:px-12 py-12 border-t border-white/20">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #4a5570, #6f7a92);">
+        <span class="serif text-white">♞</span>
+      </div>
+      <span class="serif text-lg font-medium">Soft Chess</span>
+      <span class="text-xs" style="color: var(--ink-soft);">· Шахматный анализатор</span>
+    </div>
+    <div class="flex items-center gap-6 text-sm" style="color: var(--ink-soft);">
+      <a href="https://github.com/6uxoi-Angel/Chess" target="_blank" class="nav-link flex items-center gap-2">
+        <i class="fab fa-github"></i>
+        <span>6uxoi-Angel</span>
+      </a>
+      <span class="text-xs">GPL v3 · Stockfish</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const particlesContainer = document.getElementById('particles');
+  const particleCount = 25;
+  
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+    const size = Math.random() * 4 + 2;
+    particle.style.width = size + 'px';
+    particle.style.height = size + 'px';
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.animationDuration = (Math.random() * 15 + 15) + 's';
+    particle.style.animationDelay = Math.random() * 15 + 's';
+    particlesContainer.appendChild(particle);
+  }
+
+  const revealElements = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+  revealElements.forEach(el => observer.observe(el));
+
+  const heroGlows = document.querySelectorAll('.hero-glow');
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 30;
+    const y = (e.clientY / window.innerHeight - 0.5) * 30;
+    heroGlows.forEach((glow, i) => {
+      const factor = i === 0 ? 1 : -1;
+      glow.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
+    });
+  });
+
+  const heroPieces = document.querySelectorAll('.chess-board .chess-piece');
+  heroPieces.forEach((piece, i) => {
+    piece.style.animation = `floatSlow ${8 + i * 0.5}s ease-in-out infinite`;
+    piece.style.animationDelay = `${i * 0.2}s`;
+  });
+
+  let lastScroll = 0;
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    const currentScroll = window.pageYOffset;
+    if (currentScroll > 100) {
+      nav.style.transform = currentScroll > lastScroll ? 'translateY(-100%)' : 'translateY(0)';
+    } else {
+      nav.style.transform = 'translateY(0)';
+    }
+    nav.style.transition = 'transform 0.4s ease';
+    lastScroll = currentScroll;
+  });
+</script>
+
+</body>
+</html>
